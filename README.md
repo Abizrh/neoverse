@@ -1,30 +1,91 @@
-# React + TypeScript + Vite
+# Neovim Playground
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+NeovimSimulator is a web application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
 
-Currently, two official plugins are available:
+## Disclaimer
+This playground was working based on my configuration
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- **Neovim Mode Simulation**: Supports Normal, Insert, Command, and Visual modes.
+- **File Explorer**: Left-side panel displaying file and folder structure.
+- **Interactive Editor**: Main editing area with basic syntax highlighting.
+- **Cursor Movement**: Navigate using arrow keys or standard Vim keys (h, j, k, l).
+- **Basic Editing**: Supports adding and deleting characters.
+- **Status Bar**: Displays current mode, cursor position, and active file.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## How to Use
 
-- Configure the top-level `parserOptions` property like this:
+1. **File Navigation**:
+   - Use the left panel to browse the file structure.
+   - Click on a file to open it in the editor.
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json', './tsconfig.app.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+2. **Editor Modes**:
+   - **Normal Mode**: Default mode. Use for navigation and commands.
+   - **Insert Mode**: Press `i` to enter insert mode and start editing.
+   - **Visual Mode**: Press `v` to enter visual mode (limited functionality).
+   - **Command Mode**: Press `:` to open terminal.
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+3. **Navigation**:
+   - Use arrow keys or Vim keys (h, j, k, l) to move around.
+   - `o` in Normal mode to create a new line and enter Insert mode.
+
+4. **Editing**:
+   - In Insert mode, type to add text.
+   - Use Backspace to delete characters.
+
+5. **Exiting Modes**:
+   - Press `Esc` to return to Normal mode from other modes.
+
+## Development
+
+### Prerequisites
+
+- Node.js (version 12 or later)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/Abizrh/nvim-playground.git
+   ```
+
+2. Navigate to the project directory:
+   ```
+   cd nvim-playground
+   ```
+
+3. Install dependencies:
+   ```
+   pnpm install
+   ```
+   or if using yarn:
+   ```
+   yarn install
+   ```
+
+4. Run the application in development mode:
+   ```
+   pnpm start
+   ```
+   or with yarn:
+   ```
+   yarn start
+   ```
+
+5. Open `http://localhost:5173` in your browser.
+
+## Contributing
+
+Contributions are always welcome! If you'd like to contribute, please create a pull request or open an issue for discussion about new features or bug fixes.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+## Contact
+
+If you have any questions or suggestions, feel free to contact us at [your-email@example.com](mailto:your-email@example.com).
+
+Thank you for using NeovimSimulator!

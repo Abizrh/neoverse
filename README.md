@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./public/nvim.png" height="200">
+<img src="./public/nvim.png" height="90">
 </p>
 
 <h1 align="center">

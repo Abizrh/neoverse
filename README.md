@@ -3,7 +3,7 @@ neovim-playground
 </h1>
 
 <p align="center">
-NeovimSimulator is a web application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
+Neovim Playground is a web application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
 </p>
 
 

@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">
-neovim-playground
+   neoverse
 </h1>
 
 <p align="center">

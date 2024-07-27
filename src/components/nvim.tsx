@@ -7,7 +7,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../components/ui/dialog";
-import { Cursor, FileSystemItem, Folder, Mode } from "@/types";
+import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
+import { Highlight, themes } from "prism-react-renderer";
+import { getLanguage } from "@/lib/utils";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 
@@ -27,7 +29,24 @@ const NeovimSimulator: React.FC = () => {
             {
               name: "index.ts",
               depth: 45,
-              content: ['console.log("Hello, World!");'],
+              content: [
+                "// This is a single-line comment",
+                "/* This is a",
+                "   multi-line comment */",
+                'const greeting: string = "Hello, World!";',
+                "let count: number = 42;",
+                "function printGreeting(name: string): void {",
+                "  console.log(`${greeting} My name is ${name}.`);",
+                "}",
+                "class Person {",
+                "  constructor(private name: string) {}",
+                "  greet() {",
+                "    printGreeting(this.name);",
+                "  }",
+                "}",
+                'const john = new Person("John");',
+                "john.greet();",
+              ],
             },
             {
               name: "utils.ts",
@@ -115,13 +134,14 @@ export function multiply(a: number, b: number): number {
       case "ArrowUp":
         setFileSystemCursor((prev) => Math.max(prev - 1, 0));
         break;
-      case "Enter":
+      case "Enter": {
         const selectedItem = flattenedFileSystem[fileSystemCursor];
         if (!isFolder(selectedItem)) {
           openFile(selectedItem);
           setFocusedCmp("editor");
         }
         break;
+      }
     }
   };
 
@@ -198,7 +218,7 @@ export function multiply(a: number, b: number): number {
 
   const moveCursor = (dx: number, dy: number) => {
     setCursor((prev) => {
-      let newLine = Math.max(0, Math.min(lines.length - 1, prev.line + dy));
+      const newLine = Math.max(0, Math.min(lines.length - 1, prev.line + dy));
       let newCh = Math.max(0, Math.min(lines[newLine].length, prev.ch + dx));
 
       if (newLine !== prev.line) {
@@ -303,7 +323,6 @@ export function multiply(a: number, b: number): number {
       </div>
     ));
   };
-
   return (
     <div className="flex flex-row" onKeyDown={handleKeyDown}>
       {/* File system */}
@@ -373,24 +392,41 @@ export function multiply(a: number, b: number): number {
               outline: focusedCmp === "editor" ? "2px solid #528bff" : "none",
             }}
           >
-            {lines.map((line, i) => (
-              <div key={i}>
-                {line}
-                {i === cursor.line && focusedCmp === "editor" && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: `${cursor.ch * 8.4}px`, // Approximate character width
-                      height: "1.2em",
-                      borderLeft:
-                        mode === "insert"
-                          ? "2px solid #528bff"
-                          : "6px solid #528bff",
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+            <Highlight
+              theme={themes.vsDark}
+              code={lines.join("\n")}
+              language={getLanguage(currentFile?.name || "")}
+            >
+              {({ tokens, getLineProps, getTokenProps }) => (
+                <>
+                  {tokens.map((line, lineIndex) => (
+                    <div
+                      key={lineIndex}
+                      {...getLineProps({ line })}
+                      style={{ position: "relative", minHeight: "1.2em" }}
+                    >
+                      {line.map((token, tokenIndex) => (
+                        <span key={tokenIndex} {...getTokenProps({ token })} />
+                      ))}
+                      {lineIndex === cursor.line && focusedCmp === "editor" && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            left: `${cursor.ch * 8.4}px`,
+                            top: 0,
+                            height: "1.2em",
+                            borderLeft:
+                              mode === "insert"
+                                ? "2px solid #007ACC"
+                                : "6px solid #007ACC",
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </Highlight>
           </pre>
         </div>
         <span

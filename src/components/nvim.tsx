@@ -35,15 +35,24 @@ const NeovimSimulator: React.FC = () => {
                 "   multi-line comment */",
                 'const greeting: string = "Hello, World!";',
                 "let count: number = 42;",
+
+                "",
+                "/* function */",
                 "function printGreeting(name: string): void {",
                 "  console.log(`${greeting} My name is ${name}.`);",
                 "}",
+                "",
+                "/* arrow function */",
+                "const printAge = (age: number) => console.log(`My age ${age}`)",
+                "",
+                "/* class */",
                 "class Person {",
                 "  constructor(private name: string) {}",
                 "  greet() {",
                 "    printGreeting(this.name);",
                 "  }",
                 "}",
+                "",
                 'const john = new Person("John");',
                 "john.greet();",
               ],
@@ -80,6 +89,7 @@ export function multiply(a: number, b: number): number {
   );
   const [fileSystemCursor, setFileSystemCursor] = useState<number>(0);
   const [isSpacePressed, setIsSpacePressed] = useState(true);
+  const [lastKeyPressed, setLastKeyPressed] = useState<string>("");
 
   /**
    * Refs
@@ -147,6 +157,15 @@ export function multiply(a: number, b: number): number {
 
   const handleEditorNavigation = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mode === "normal") {
+      if (e.key === "d") {
+        if (lastKeyPressed === "d") {
+          deleteLine();
+          setLastKeyPressed("");
+        } else {
+          setLastKeyPressed("d");
+        }
+        return;
+      }
       switch (e.key) {
         case "i":
           setMode("insert");
@@ -174,6 +193,9 @@ export function multiply(a: number, b: number): number {
           setMode("insert");
           insertNewLine();
           break;
+        case "d": {
+          break;
+        }
         case ":":
           setIsOpen(true);
           setMode("command");
@@ -242,6 +264,21 @@ export function multiply(a: number, b: number): number {
     updateListSymbol();
   };
 
+  const deleteLine = () => {
+    setLines((prevLines) => {
+      const newLines = [...prevLines];
+      newLines.splice(cursor.line, 1);
+      if (newLines.length === 0) {
+        newLines.push("");
+      }
+      return newLines;
+    });
+
+    setCursor((prevCursor) => ({
+      line: Math.min(prevCursor.line, lines.length - 2),
+      ch: 0,
+    }));
+  };
   const deleteChar = () => {
     if (cursor.ch > 0) {
       const newLines = [...lines];
@@ -330,7 +367,7 @@ export function multiply(a: number, b: number): number {
         ref={fileSystemRef}
         tabIndex={0}
         style={{
-          width: "20vw",
+          width: "15vw",
           height: "100vh",
           backgroundColor: "#252526",
           color: "#858585",

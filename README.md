@@ -3,11 +3,11 @@
 </p>
 
 <h1 align="center">
-neovim-playground
+   Neoverse
 </h1>
 
 <p align="center">
-Neovim Playground is a web application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
+Neoverse is a web based application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
 </p>
 
 <p align="center">
@@ -64,12 +64,12 @@ This playground was working based on my own configuration
 
 1. Clone the repository:
    ```
-   git clone https://github.com/Abizrh/nvim-playground.git
+   git clone https://github.com/Abizrh/neoverse.git
    ```
 
 2. Navigate to the project directory:
    ```
-   cd nvim-playground
+   cd neoverse
    ```
 
 3. Install dependencies:
@@ -99,9 +99,3 @@ Contributions are always welcome! If you'd like to contribute, please create a p
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-## Contact
-
-If you have any questions or suggestions, feel free to contact us at [your-email@example.com](mailto:your-email@example.com).
-
-Thank you for using NeovimSimulator!

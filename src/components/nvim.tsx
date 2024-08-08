@@ -332,7 +332,7 @@ export function multiply(a: number, b: number): number {
         style={{
           width: "20vw",
           height: "100vh",
-          backgroundColor: "#252526",
+          backgroundColor: "#1E1E1E",
           color: "#858585",
           fontFamily: "Consolas, monospace",
           fontSize: "14px",

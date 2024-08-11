@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Button } from "../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,7 @@ import {
 import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage } from "@/lib/utils";
+import FileStatusDisplay from "./status";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 
@@ -80,6 +80,8 @@ export function multiply(a: number, b: number): number {
   );
   const [fileSystemCursor, setFileSystemCursor] = useState<number>(0);
   const [isSpacePressed, setIsSpacePressed] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   /**
    * Refs
@@ -95,6 +97,65 @@ export function multiply(a: number, b: number): number {
     }
     if (isOpen) setMode("command");
   }, [isOpen, focusedCmp]);
+
+  useEffect(() => {
+    initializeIndexedDB();
+  }, []);
+
+  const initializeIndexedDB = () => {
+    const request = indexedDB.open("NeovimSimulatorDB", 1);
+
+    request.onerror = (event) => {
+      console.error("IndexedDB error:", event);
+    };
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      console.log("IndexedDB opened successfully", db);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      db.createObjectStore("files", { keyPath: "name" });
+    };
+  };
+
+  const saveToIndexedDB = () => {
+    if (!currentFile) return;
+    console.log("saving...");
+
+    setIsSaving(true);
+    setSaveMessage("Saving...");
+
+    const request = indexedDB.open("NeovimSimulatorDB", 1);
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(["files"], "readwrite");
+      const objectStore = transaction.objectStore("files");
+
+      const updatedFile = { ...currentFile, content: lines };
+      const putRequest = objectStore.put(updatedFile);
+
+      putRequest.onsuccess = () => {
+        setIsSaving(false);
+        setSaveMessage("File saved successfully!");
+        setTimeout(() => setSaveMessage(""), 3000);
+      };
+
+      putRequest.onerror = () => {
+        setIsSaving(false);
+        setSaveMessage("Error saving file.");
+        setTimeout(() => setSaveMessage(""), 3000);
+      };
+    };
+
+    request.onerror = () => {
+      setIsSaving(false);
+      setSaveMessage("Error opening database.");
+      setTimeout(() => setSaveMessage(""), 3000);
+    };
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -178,6 +239,12 @@ export function multiply(a: number, b: number): number {
           setIsOpen(true);
           setMode("command");
           break;
+        case "w":
+          // if (e.ctrlKey) {
+          e.preventDefault();
+          saveToIndexedDB();
+          // }
+          break;
       }
     } else if (mode === "insert") {
       switch (e.key) {
@@ -209,6 +276,14 @@ export function multiply(a: number, b: number): number {
       }
     } else if (mode === "command") {
       setMode("normal");
+      // if (e.key === "Enter") {
+      //   const commandInput = (e.target as HTMLInputElement).value;
+      //   console.log(commandInput);
+      // if (commandInput === "w" || commandInput === "write") {
+      //   saveToIndexedDB();
+      // }
+      // setIsOpen(false);
+      // }
     } else if (mode === "visual") {
       if (e.key === "Escape") {
         setMode("normal");
@@ -286,9 +361,40 @@ export function multiply(a: number, b: number): number {
   };
 
   const openFile = (file: File) => {
-    setCurrentFile(file);
-    setLines(file.content);
-    setCursor({ line: 0, ch: 0 });
+    const request = indexedDB.open("NeovimSimulatorDB", 1);
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(["files"], "readonly");
+      const objectStore = transaction.objectStore("files");
+      const getRequest = objectStore.get(file.name);
+
+      getRequest.onsuccess = () => {
+        const savedFile = getRequest.result;
+        if (savedFile) {
+          setCurrentFile(savedFile);
+          setLines(savedFile.content);
+        } else {
+          setCurrentFile(file);
+          setLines(file.content);
+        }
+        setCursor({ line: 0, ch: 0 });
+      };
+
+      getRequest.onerror = () => {
+        console.error("Error retrieving file from IndexedDB");
+        setCurrentFile(file);
+        setLines(file.content);
+        setCursor({ line: 0, ch: 0 });
+      };
+    };
+
+    request.onerror = () => {
+      console.error("Error opening IndexedDB");
+      setCurrentFile(file);
+      setLines(file.content);
+      setCursor({ line: 0, ch: 0 });
+    };
   };
 
   const flattenFileSystem = (items: FileSystemItem[]): FileSystemItem[] => {
@@ -332,7 +438,7 @@ export function multiply(a: number, b: number): number {
         style={{
           width: "20vw",
           height: "100vh",
-          backgroundColor: "#252526",
+          backgroundColor: "#1E1E1E",
           color: "#858585",
           fontFamily: "Consolas, monospace",
           fontSize: "14px",
@@ -342,15 +448,11 @@ export function multiply(a: number, b: number): number {
       >
         {renderFileSystem(fileSystem)}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-        <span
-          style={{
-            padding: "20px 20px",
-            backgroundColor: "#21252b",
-            color: "#98c379",
-          }}
-        >
-          Mode: {mode.toUpperCase()} | File: {currentFile?.name || "None"}
-        </span>
+        <FileStatusDisplay
+          mode={mode}
+          currentFile={currentFile}
+          isUnsaved={isSaving}
+        />
       </div>
 
       {/* Editor */}
@@ -442,13 +544,17 @@ export function multiply(a: number, b: number): number {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dialog Title</DialogTitle>
+            <DialogTitle>Command Mode</DialogTitle>
             <DialogDescription>
-              This is a description of the dialog content.
+              Enter a command (e.g., "w" or "write" to save)
             </DialogDescription>
           </DialogHeader>
-          <p>Dialog content goes here.</p>
-          <Button onClick={() => setIsOpen(false)}>Close</Button>
+          <input
+            type="text"
+            autoFocus
+            className="w-full p-2 border rounded"
+            onKeyDown={handleEditorNavigation}
+          />
         </DialogContent>
       </Dialog>
     </div>

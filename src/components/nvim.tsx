@@ -10,6 +10,7 @@ import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage } from "@/lib/utils";
 import FileStatusDisplay from "./status";
+import Theme from "./theme";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 
@@ -82,6 +83,7 @@ export function multiply(a: number, b: number): number {
   const [isSpacePressed, setIsSpacePressed] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [currentTheme, setCurrentTheme] = useState("vsDark");
 
   /**
    * Refs
@@ -118,6 +120,14 @@ export function multiply(a: number, b: number): number {
       const db = (event.target as IDBOpenDBRequest).result;
       db.createObjectStore("files", { keyPath: "name" });
     };
+  };
+
+  const handleThemeChange = (newTheme: string) => {
+    setCurrentTheme(newTheme);
+  };
+
+  const handleCloseThemeDialog = () => {
+    setIsOpen(false);
   };
 
   const saveToIndexedDB = () => {
@@ -448,6 +458,7 @@ export function multiply(a: number, b: number): number {
       >
         {renderFileSystem(fileSystem)}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+        {currentTheme}
         <FileStatusDisplay
           mode={mode}
           currentFile={currentFile}
@@ -495,7 +506,7 @@ export function multiply(a: number, b: number): number {
             }}
           >
             <Highlight
-              theme={themes.vsDark}
+              theme={themes[currentTheme as keyof typeof themes]}
               code={lines.join("\n")}
               language={getLanguage(currentFile?.name || "")}
             >
@@ -541,22 +552,13 @@ export function multiply(a: number, b: number): number {
           Cursor {cursor.line + 1}:{cursor.ch + 1}
         </span>
       </div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Command Mode</DialogTitle>
-            <DialogDescription>
-              Enter a command (e.g., "w" or "write" to save)
-            </DialogDescription>
-          </DialogHeader>
-          <input
-            type="text"
-            autoFocus
-            className="w-full p-2 border rounded"
-            onKeyDown={handleEditorNavigation}
-          />
-        </DialogContent>
-      </Dialog>
+      <Theme
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        onThemeChange={handleThemeChange}
+        onClose={handleCloseThemeDialog}
+        currentTheme={currentTheme}
+      />
     </div>
   );
 };

@@ -1,11 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../components/ui/dialog";
 import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage } from "@/lib/utils";
@@ -52,14 +45,7 @@ const NeovimSimulator: React.FC = () => {
             {
               name: "utils.ts",
               depth: 45,
-              content: [
-                "export const add = (a: number, b: number) => a + b;",
-                `
-export function multiply(a: number, b: number): number {
-  return a * b;
-}
-                `,
-              ],
+              content: [""],
             },
           ],
         },
@@ -75,7 +61,7 @@ export function multiply(a: number, b: number): number {
   const [lines, setLines] = useState<string[]>([""]);
   const [mode, setMode] = useState<Mode>("normal");
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpenTheme, setIsOpenTheme] = useState(false);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -83,7 +69,9 @@ export function multiply(a: number, b: number): number {
   const [isSpacePressed, setIsSpacePressed] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-  const [currentTheme, setCurrentTheme] = useState("vsDark");
+
+  const theme = localStorage.getItem("theme") || "vsDark";
+  const [currentTheme, setCurrentTheme] = useState(theme);
 
   /**
    * Refs
@@ -97,8 +85,8 @@ export function multiply(a: number, b: number): number {
     } else {
       editorRef.current?.focus();
     }
-    if (isOpen) setMode("command");
-  }, [isOpen, focusedCmp]);
+    if (isOpenTheme) setMode("command");
+  }, [isOpenTheme, focusedCmp]);
 
   useEffect(() => {
     initializeIndexedDB();
@@ -122,12 +110,14 @@ export function multiply(a: number, b: number): number {
     };
   };
 
+  // TODO: save theme to local storage
   const handleThemeChange = (newTheme: string) => {
     setCurrentTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
   };
 
   const handleCloseThemeDialog = () => {
-    setIsOpen(false);
+    setIsOpenTheme(false);
   };
 
   const saveToIndexedDB = () => {
@@ -181,6 +171,13 @@ export function multiply(a: number, b: number): number {
       );
       setIsSpacePressed(false);
       return;
+    }
+
+    if (isSpacePressed && e.key === "t" && mode === "normal") {
+      e.preventDefault();
+
+      setIsOpenTheme(true);
+      setMode("command");
     }
 
     if (focusedCmp === "fileSystem") {
@@ -245,10 +242,10 @@ export function multiply(a: number, b: number): number {
           setMode("insert");
           insertNewLine();
           break;
-        case ":":
-          setIsOpen(true);
-          setMode("command");
-          break;
+        // case ":":
+        //   setIsOpenTheme(true);
+        //   setMode("command");
+        //   break;
         case "w":
           // if (e.ctrlKey) {
           e.preventDefault();
@@ -292,7 +289,7 @@ export function multiply(a: number, b: number): number {
       // if (commandInput === "w" || commandInput === "write") {
       //   saveToIndexedDB();
       // }
-      // setIsOpen(false);
+      // setIsOpenTheme(false);
       // }
     } else if (mode === "visual") {
       if (e.key === "Escape") {
@@ -458,7 +455,6 @@ export function multiply(a: number, b: number): number {
       >
         {renderFileSystem(fileSystem)}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-        {currentTheme}
         <FileStatusDisplay
           mode={mode}
           currentFile={currentFile}
@@ -553,8 +549,8 @@ export function multiply(a: number, b: number): number {
         </span>
       </div>
       <Theme
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
+        isOpen={isOpenTheme}
+        setIsOpen={setIsOpenTheme}
         onThemeChange={handleThemeChange}
         onClose={handleCloseThemeDialog}
         currentTheme={currentTheme}

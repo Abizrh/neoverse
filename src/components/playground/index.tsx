@@ -47,6 +47,11 @@ const NeovimSimulator: React.FC = () => {
               depth: 45,
               content: [""],
             },
+            {
+              name: "type.ts",
+              depth: 45,
+              content: [""],
+            },
           ],
         },
         {

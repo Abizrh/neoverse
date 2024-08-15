@@ -1,13 +1,23 @@
-import React from "react";
-import NeovimSimulator from "./components/nvim";
+import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import NeovimSimulator from "@/components/playground";
+import Layout from "./components/layout";
+
 function App() {
   return (
-    <>
-      <div>
-        <NeovimSimulator />
-      </div>
-      {/* <NeovimSimulator /> */}
-    </>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="home w-full">
+              <Layout />
+            </div>
+          }
+        />
+        <Route path="/playground" element={<NeovimSimulator />} />
+      </Routes>
+    </Router>
   );
 }
 

@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
-import { getLanguage } from "@/lib/utils";
+import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
 import Theme from "./theme";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
+const theme = localStorage.getItem("theme") || "vsDark";
 
 const NeovimSimulator: React.FC = () => {
   /**
@@ -75,7 +76,6 @@ const NeovimSimulator: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  const theme = localStorage.getItem("theme") || "vsDark";
   const [currentTheme, setCurrentTheme] = useState(theme);
 
   /**
@@ -83,7 +83,28 @@ const NeovimSimulator: React.FC = () => {
    */
   const editorRef = useRef<HTMLPreElement>(null);
   const fileSystemRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLSpanElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  /**
+   * Callbacks
+   */
+  const scrollToCursor = useCallback(() => {
+    if (editorRef.current && cursorRef.current) {
+      const editorRect = editorRef.current.getBoundingClientRect();
+      const cursorRect = cursorRef.current.getBoundingClientRect();
+
+      if (cursorRect.bottom > editorRect.bottom) {
+        editorRef.current.scrollTop += cursorRect.bottom - editorRect.bottom;
+      } else if (cursorRect.top < editorRect.top) {
+        editorRef.current.scrollTop -= editorRect.top - cursorRect.top;
+      }
+    }
+  }, []);
+
+  /**
+   * Effects
+   */
   useEffect(() => {
     if (focusedCmp === "fileSystem") {
       fileSystemRef.current?.focus();
@@ -97,25 +118,22 @@ const NeovimSimulator: React.FC = () => {
     initializeIndexedDB();
   }, []);
 
-  const initializeIndexedDB = () => {
-    const request = indexedDB.open("NeovimSimulatorDB", 1);
+  useEffect(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
 
-    request.onerror = (event) => {
-      console.error("IndexedDB error:", event);
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollToCursor();
+    }, 50);
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
+  }, [cursor, scrollToCursor]);
 
-    request.onsuccess = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      console.log("IndexedDB opened successfully", db);
-    };
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      db.createObjectStore("files", { keyPath: "name" });
-    };
-  };
-
-  // TODO: save theme to local storage
   const handleThemeChange = (newTheme: string) => {
     setCurrentTheme(newTheme);
     localStorage.setItem("theme", newTheme);
@@ -169,6 +187,7 @@ const NeovimSimulator: React.FC = () => {
       setIsSpacePressed(true);
     }
 
+    // handler for switching between file system and editor
     if (isSpacePressed && e.key === "e" && mode === "normal") {
       e.preventDefault();
       setFocusedCmp((prev) =>
@@ -247,15 +266,9 @@ const NeovimSimulator: React.FC = () => {
           setMode("insert");
           insertNewLine();
           break;
-        // case ":":
-        //   setIsOpenTheme(true);
-        //   setMode("command");
-        //   break;
         case "w":
-          // if (e.ctrlKey) {
           e.preventDefault();
           saveToIndexedDB();
-          // }
           break;
       }
     } else if (mode === "insert") {
@@ -288,14 +301,6 @@ const NeovimSimulator: React.FC = () => {
       }
     } else if (mode === "command") {
       setMode("normal");
-      // if (e.key === "Enter") {
-      //   const commandInput = (e.target as HTMLInputElement).value;
-      //   console.log(commandInput);
-      // if (commandInput === "w" || commandInput === "write") {
-      //   saveToIndexedDB();
-      // }
-      // setIsOpenTheme(false);
-      // }
     } else if (mode === "visual") {
       if (e.key === "Escape") {
         setMode("normal");
@@ -444,28 +449,30 @@ const NeovimSimulator: React.FC = () => {
   return (
     <div className="flex flex-row" onKeyDown={handleKeyDown}>
       {/* File system */}
-      <div
-        ref={fileSystemRef}
-        tabIndex={0}
-        style={{
-          width: "20vw",
-          height: "100vh",
-          backgroundColor: "#1E1E1E",
-          color: "#858585",
-          fontFamily: "Consolas, monospace",
-          fontSize: "14px",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {renderFileSystem(fileSystem)}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-        <FileStatusDisplay
-          mode={mode}
-          currentFile={currentFile}
-          isUnsaved={isSaving}
-        />
-      </div>
+      {focusedCmp === "fileSystem" && (
+        <div
+          ref={fileSystemRef}
+          tabIndex={0}
+          style={{
+            width: "25vw",
+            height: "100vh",
+            backgroundColor: "#1E1E1E",
+            color: "#858585",
+            fontFamily: "Consolas, monospace",
+            fontSize: "14px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {renderFileSystem(fileSystem)}
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+          <FileStatusDisplay
+            mode={mode}
+            currentFile={currentFile}
+            isUnsaved={isSaving}
+          />
+        </div>
+      )}
 
       {/* Editor */}
       <div
@@ -524,6 +531,7 @@ const NeovimSimulator: React.FC = () => {
                       ))}
                       {lineIndex === cursor.line && focusedCmp === "editor" && (
                         <span
+                          ref={cursorRef}
                           style={{
                             position: "absolute",
                             left: `${cursor.ch * 8.4}px`,

@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { ThemeItem } from "@/types";
 
-const themes = [
+const themes: ThemeItem[] = [
   { value: "vsDark", label: "VS Dark" },
   { value: "vsLight", label: "VS Light" },
   { value: "dracula", label: "Dracula" },

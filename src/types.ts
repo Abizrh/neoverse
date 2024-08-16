@@ -22,3 +22,8 @@ export interface SyntaxSegment {
   text: string;
   style?: React.CSSProperties;
 }
+
+export interface ThemeItem {
+  value: string;
+  label: string;
+}

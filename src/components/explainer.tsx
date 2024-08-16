@@ -8,13 +8,15 @@ const Explainer: React.FC = () => {
     <section className="py-16 md:py-32 px-6 lg:px-0 max-w-4xl mx-auto">
       <div className="space-y-5 max-w-2xl">
         <h2 className="font-display text-2xl md:text-4xl font-bold">
-          What is Feedbackjar?
+          What is Neoverse?
         </h2>
         <p className="text-base md:text-lg font-medium text-gray-600 dark:text-gray-400">
-          Everything you need to collect, manage and close feedback, ideas and
-          bugs. You focus on building your product, we handle collecting
-          feedback, posting them on public boards, prioritizing them with public
-          roadmaps and announcing updates to users with changelogs.
+          Neoverse is a web-based application that replicates the Neovim
+          experience directly in your browser. Neoverse offers an interactive
+          platform for learning and practicing Neovim commands and workflows
+          without the need to install anything. Whether you're new to Neovim or
+          an experienced user, Neoverse provides a seamless way to enhance your
+          skills in a familiar environment.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-5 mt-5">

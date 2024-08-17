@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -7,6 +7,19 @@ const Home: React.FC = () => {
   const handleClick = () => {
     navigate("/playground");
   };
+  const [width, setWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
     <>
@@ -25,14 +38,21 @@ const Home: React.FC = () => {
             installation needed, just dive in and master Neovim's efficiency.
           </p>
           <div className="!mt-10">
-            <Button
-              variant="default"
-              size="lg"
-              className="rounded-lg"
-              onClick={handleClick}
-            >
-              Give it a shoot ✨ →
-            </Button>
+            {width > 700 ? (
+              <Button
+                variant="default"
+                size="lg"
+                className="rounded-lg"
+                onClick={handleClick}
+              >
+                Give it a shoot ✨ →
+              </Button>
+            ) : (
+              <div className="bg-red-100 text-red-800 py-1 px-3 rounded-sm text-sm font-semibold inline-block">
+                Woops! your'e trying to access the demo version of Neoverse
+                while in mobile phone. Please use a desktop browser.
+              </div>
+            )}
           </div>
         </div>
       </section>

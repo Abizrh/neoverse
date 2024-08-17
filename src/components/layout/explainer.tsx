@@ -21,20 +21,20 @@ const Explainer: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-5 mt-5">
         <Card
-          title="Incoming Feedback"
-          description="Collect feedback with widget/sdk/api/urls/qr-codes."
+          title="What is Neovim?"
+          description="Get a quick overview of Neovim and its features."
           linkTo="/"
           linkText="Learn more →"
         />
         <Card
           title="Roadmaps"
-          description="Show what you're working on and what's coming next."
+          description="List upcoming features and improvements"
           linkTo="/"
           linkText="Learn more →"
         />
         <Card
           title="Changelogs"
-          description="Announce updates to your users with changelogs."
+          description="Announce updates to your users with changelogs"
           linkTo="/"
           linkText="Learn more →"
         />

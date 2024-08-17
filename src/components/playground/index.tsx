@@ -180,6 +180,7 @@ const NeovimSimulator: React.FC = () => {
     };
   };
 
+  // TODO: need to think a possible approach to handle key binds
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.key === " ") {

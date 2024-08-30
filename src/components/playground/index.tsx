@@ -180,7 +180,7 @@ const NeovimSimulator: React.FC = () => {
     };
   };
 
-  // TODO: need to think a possible approach to handle key binds
+  // WARN: need to think a possible approach to handle more key binds
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.key === " ") {
@@ -188,7 +188,7 @@ const NeovimSimulator: React.FC = () => {
       setIsSpacePressed(true);
     }
 
-    // handler for switching between file system and editor
+    //NOTE: handler for switching between file system and editor
     if (isSpacePressed && e.key === "e" && mode === "normal") {
       e.preventDefault();
       setFocusedCmp((prev) =>

@@ -1,17 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../components/ui/dialog";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
-import { getLanguage } from "@/lib/utils";
+import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
+import Theme from "./theme";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
+const theme = localStorage.getItem("theme") || "vsDark";
 
 const NeovimSimulator: React.FC = () => {
   /**
@@ -51,14 +46,12 @@ const NeovimSimulator: React.FC = () => {
             {
               name: "utils.ts",
               depth: 45,
-              content: [
-                "export const add = (a: number, b: number) => a + b;",
-                `
-export function multiply(a: number, b: number): number {
-  return a * b;
-}
-                `,
-              ],
+              content: [""],
+            },
+            {
+              name: "type.ts",
+              depth: 45,
+              content: [""],
             },
           ],
         },
@@ -74,7 +67,7 @@ export function multiply(a: number, b: number): number {
   const [lines, setLines] = useState<string[]>([""]);
   const [mode, setMode] = useState<Mode>("normal");
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpenTheme, setIsOpenTheme] = useState(false);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -83,41 +76,71 @@ export function multiply(a: number, b: number): number {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
+  const [currentTheme, setCurrentTheme] = useState(theme);
+
   /**
    * Refs
    */
   const editorRef = useRef<HTMLPreElement>(null);
   const fileSystemRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLSpanElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  /**
+   * Callbacks
+   */
+  const scrollToCursor = useCallback(() => {
+    if (editorRef.current && cursorRef.current) {
+      const editorRect = editorRef.current.getBoundingClientRect();
+      const cursorRect = cursorRef.current.getBoundingClientRect();
+
+      if (cursorRect.bottom > editorRect.bottom) {
+        editorRef.current.scrollTop += cursorRect.bottom - editorRect.bottom;
+      } else if (cursorRect.top < editorRect.top) {
+        editorRef.current.scrollTop -= editorRect.top - cursorRect.top;
+      }
+    }
+  }, []);
+
+  /**
+   * Effects
+   */
   useEffect(() => {
     if (focusedCmp === "fileSystem") {
       fileSystemRef.current?.focus();
     } else {
       editorRef.current?.focus();
     }
-    if (isOpen) setMode("command");
-  }, [isOpen, focusedCmp]);
+    if (isOpenTheme) setMode("command");
+  }, [isOpenTheme, focusedCmp]);
 
   useEffect(() => {
     initializeIndexedDB();
   }, []);
 
-  const initializeIndexedDB = () => {
-    const request = indexedDB.open("NeovimSimulatorDB", 1);
+  useEffect(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
 
-    request.onerror = (event) => {
-      console.error("IndexedDB error:", event);
-    };
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollToCursor();
+    }, 50);
 
-    request.onsuccess = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      console.log("IndexedDB opened successfully", db);
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
+  }, [cursor, scrollToCursor]);
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      db.createObjectStore("files", { keyPath: "name" });
-    };
+  const handleThemeChange = (newTheme: string) => {
+    setCurrentTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  const handleCloseThemeDialog = () => {
+    setIsOpenTheme(false);
   };
 
   const saveToIndexedDB = () => {
@@ -157,6 +180,7 @@ export function multiply(a: number, b: number): number {
     };
   };
 
+  // WARN: need to think a possible approach to handle more key binds
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.key === " ") {
@@ -164,6 +188,7 @@ export function multiply(a: number, b: number): number {
       setIsSpacePressed(true);
     }
 
+    //NOTE: handler for switching between file system and editor
     if (isSpacePressed && e.key === "e" && mode === "normal") {
       e.preventDefault();
       setFocusedCmp((prev) =>
@@ -171,6 +196,13 @@ export function multiply(a: number, b: number): number {
       );
       setIsSpacePressed(false);
       return;
+    }
+
+    if (isSpacePressed && e.key === "t" && mode === "normal") {
+      e.preventDefault();
+
+      setIsOpenTheme(true);
+      setMode("command");
     }
 
     if (focusedCmp === "fileSystem") {
@@ -235,15 +267,9 @@ export function multiply(a: number, b: number): number {
           setMode("insert");
           insertNewLine();
           break;
-        case ":":
-          setIsOpen(true);
-          setMode("command");
-          break;
         case "w":
-          // if (e.ctrlKey) {
           e.preventDefault();
           saveToIndexedDB();
-          // }
           break;
       }
     } else if (mode === "insert") {
@@ -276,14 +302,6 @@ export function multiply(a: number, b: number): number {
       }
     } else if (mode === "command") {
       setMode("normal");
-      // if (e.key === "Enter") {
-      //   const commandInput = (e.target as HTMLInputElement).value;
-      //   console.log(commandInput);
-      // if (commandInput === "w" || commandInput === "write") {
-      //   saveToIndexedDB();
-      // }
-      // setIsOpen(false);
-      // }
     } else if (mode === "visual") {
       if (e.key === "Escape") {
         setMode("normal");
@@ -432,28 +450,30 @@ export function multiply(a: number, b: number): number {
   return (
     <div className="flex flex-row" onKeyDown={handleKeyDown}>
       {/* File system */}
-      <div
-        ref={fileSystemRef}
-        tabIndex={0}
-        style={{
-          width: "20vw",
-          height: "100vh",
-          backgroundColor: "#1E1E1E",
-          color: "#858585",
-          fontFamily: "Consolas, monospace",
-          fontSize: "14px",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {renderFileSystem(fileSystem)}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-        <FileStatusDisplay
-          mode={mode}
-          currentFile={currentFile}
-          isUnsaved={isSaving}
-        />
-      </div>
+      {focusedCmp === "fileSystem" && (
+        <div
+          ref={fileSystemRef}
+          tabIndex={0}
+          style={{
+            width: "25vw",
+            height: "100vh",
+            backgroundColor: "#1E1E1E",
+            color: "#858585",
+            fontFamily: "Consolas, monospace",
+            fontSize: "14px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {renderFileSystem(fileSystem)}
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+          <FileStatusDisplay
+            mode={mode}
+            currentFile={currentFile}
+            isUnsaved={isSaving}
+          />
+        </div>
+      )}
 
       {/* Editor */}
       <div
@@ -495,7 +515,7 @@ export function multiply(a: number, b: number): number {
             }}
           >
             <Highlight
-              theme={themes.vsDark}
+              theme={themes[currentTheme as keyof typeof themes]}
               code={lines.join("\n")}
               language={getLanguage(currentFile?.name || "")}
             >
@@ -512,6 +532,7 @@ export function multiply(a: number, b: number): number {
                       ))}
                       {lineIndex === cursor.line && focusedCmp === "editor" && (
                         <span
+                          ref={cursorRef}
                           style={{
                             position: "absolute",
                             left: `${cursor.ch * 8.4}px`,
@@ -541,22 +562,13 @@ export function multiply(a: number, b: number): number {
           Cursor {cursor.line + 1}:{cursor.ch + 1}
         </span>
       </div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Command Mode</DialogTitle>
-            <DialogDescription>
-              Enter a command (e.g., "w" or "write" to save)
-            </DialogDescription>
-          </DialogHeader>
-          <input
-            type="text"
-            autoFocus
-            className="w-full p-2 border rounded"
-            onKeyDown={handleEditorNavigation}
-          />
-        </DialogContent>
-      </Dialog>
+      <Theme
+        isOpen={isOpenTheme}
+        setIsOpen={setIsOpenTheme}
+        onThemeChange={handleThemeChange}
+        onClose={handleCloseThemeDialog}
+        currentTheme={currentTheme}
+      />
     </div>
   );
 };

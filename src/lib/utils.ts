@@ -44,10 +44,10 @@ export const initializeIndexedDB = () => {
     console.error("IndexedDB error:", event);
   };
 
-  request.onsuccess = (event) => {
-    const db = (event.target as IDBOpenDBRequest).result;
-    console.log("IndexedDB opened successfully", db);
-  };
+  // request.onsuccess = (event) => {
+  //   const db = (event.target as IDBOpenDBRequest).result;
+  //   console.log("IndexedDB opened successfully", db);
+  // };
 
   request.onupgradeneeded = (event) => {
     const db = (event.target as IDBOpenDBRequest).result;

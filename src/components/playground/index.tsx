@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
+import { Cursor, FileSystemItem, Folder, Mode, File, TypeMode } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
@@ -75,8 +75,8 @@ const NeovimSimulator: React.FC = () => {
   const [isSpacePressed, setIsSpacePressed] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-
   const [currentTheme, setCurrentTheme] = useState(theme);
+  const [keyPressed, setKeyPressed] = useState<string[]>([]);
 
   /**
    * Refs
@@ -85,6 +85,8 @@ const NeovimSimulator: React.FC = () => {
   const fileSystemRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const keyPressedRef = useRef<string[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Callbacks
@@ -101,6 +103,54 @@ const NeovimSimulator: React.FC = () => {
       }
     }
   }, []);
+
+  const deleteLine = useCallback(() => {
+    // newLine a line that the character is has been deleted
+    const newLines = [...lines];
+
+    //lines otherwise still have the deleted line and content
+
+    // TODO: we have to store the cursor.line position
+    // and then we can filter out the deleted line and content and we can set the value to undoLine
+    newLines.splice(cursor.line, 1);
+    setLines(newLines);
+    setCursor({ line: cursor.line, ch: 0 });
+  }, [cursor, lines]);
+
+  const undoLine = useCallback(() => {
+    if (cursor.line > 0) {
+      const newLines = [...lines];
+      newLines.splice(cursor.line, 1);
+      newLines.splice(cursor.line, 0, lines[cursor.line]);
+      setLines(newLines);
+      setCursor({ line: cursor.line, ch: lines[cursor.line].length });
+    }
+  }, [cursor, lines]);
+
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (mode === TypeMode.NORMAL) {
+        keyPressedRef.current.push(event.key);
+
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          if (
+            keyPressedRef.current.includes("d") &&
+            keyPressedRef.current.length === 2
+          ) {
+            deleteLine();
+          } else if (keyPressedRef.current.includes("u")) {
+            undoLine();
+          }
+          keyPressedRef.current = [];
+        }, 200);
+      }
+    },
+    [mode, deleteLine, undoLine],
+  );
 
   /**
    * Effects
@@ -133,6 +183,16 @@ const NeovimSimulator: React.FC = () => {
       }
     };
   }, [cursor, scrollToCursor]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [handleKeyPress]);
 
   const handleThemeChange = (newTheme: string) => {
     setCurrentTheme(newTheme);
@@ -241,6 +301,13 @@ const NeovimSimulator: React.FC = () => {
   const handleEditorNavigation = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mode === "normal") {
       switch (e.key) {
+        case "d":
+          setKeyPressed((prevKeyPressed) => {
+            const newKeyPressed = [...prevKeyPressed, "d"];
+            return newKeyPressed;
+          });
+
+          break;
         case "i":
           setMode("insert");
           break;

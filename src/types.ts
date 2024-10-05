@@ -27,3 +27,10 @@ export interface ThemeItem {
   value: string;
   label: string;
 }
+
+export enum TypeMode {
+  NORMAL = "normal",
+  INSERT = "insert",
+  VISUAL = "visual",
+  COMMAND = "command",
+}

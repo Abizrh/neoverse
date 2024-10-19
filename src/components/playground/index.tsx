@@ -306,7 +306,6 @@ const NeovimSimulator: React.FC = () => {
             const newKeyPressed = [...prevKeyPressed, "d"];
             return newKeyPressed;
           });
-
           break;
         case "i":
           setMode("insert");
@@ -333,6 +332,9 @@ const NeovimSimulator: React.FC = () => {
         case "o":
           setMode("insert");
           insertNewLine();
+          break;
+        case "u":
+          deleteChar();
           break;
         case "w":
           e.preventDefault();
@@ -397,7 +399,6 @@ const NeovimSimulator: React.FC = () => {
         line.slice(0, cursor.ch) + char + line.slice(cursor.ch);
       return newLines;
     });
-
     setCursor((prevCursor) => ({ ...prevCursor, ch: prevCursor.ch + 1 }));
     updateListSymbol();
   };
@@ -517,30 +518,29 @@ const NeovimSimulator: React.FC = () => {
   return (
     <div className="flex flex-row" onKeyDown={handleKeyDown}>
       {/* File system */}
-      {focusedCmp === "fileSystem" && (
-        <div
-          ref={fileSystemRef}
-          tabIndex={0}
-          style={{
-            width: "25vw",
-            height: "100vh",
-            backgroundColor: "#1E1E1E",
-            color: "#858585",
-            fontFamily: "Consolas, monospace",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {renderFileSystem(fileSystem)}
-          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-          <FileStatusDisplay
-            mode={mode}
-            currentFile={currentFile}
-            isUnsaved={isSaving}
-          />
-        </div>
-      )}
+      <div
+        ref={fileSystemRef}
+        tabIndex={0}
+        style={{
+          width: "20vw",
+          height: "100vh",
+          backgroundColor: "#1E1E1E",
+          color: "#858585",
+          fontFamily: "Consolas, monospace",
+          fontSize: "14px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {renderFileSystem(fileSystem)}
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+        <FileStatusDisplay
+          mode={mode}
+          currentFile={currentFile}
+          isUnsaved={isSaving}
+          saveMessage={saveMessage}
+        />
+      </div>
 
       {/* Editor */}
       <div
@@ -626,7 +626,7 @@ const NeovimSimulator: React.FC = () => {
             color: "#98c379",
           }}
         >
-          Cursor {cursor.line + 1}:{cursor.ch + 1}
+          Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
         </span>
       </div>
       <Theme

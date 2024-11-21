@@ -4,6 +4,11 @@ import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
 import Theme from "./theme";
+import Help from "./help";
+import { HelpCircleIcon } from "lucide-react";
+import Kbd from "../ui/kbd";
+// import Help from "./help";
+//
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 const theme = localStorage.getItem("theme") || "vsDark";
@@ -46,12 +51,14 @@ const NeovimSimulator: React.FC = () => {
             {
               name: "utils.ts",
               depth: 45,
-              content: [""],
+              content: ["export const initializeIndexedDB = (): void => {};"],
             },
             {
               name: "type.ts",
               depth: 45,
-              content: [""],
+              content: [
+                "export type TypeMode = 'normal' | 'insert' | 'visual' | 'command';",
+              ],
             },
           ],
         },
@@ -68,6 +75,7 @@ const NeovimSimulator: React.FC = () => {
   const [mode, setMode] = useState<Mode>("normal");
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
   const [isOpenTheme, setIsOpenTheme] = useState(false);
+  const [isOpenHelp, setIsOpenHelp] = useState(true);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -248,7 +256,7 @@ const NeovimSimulator: React.FC = () => {
       setIsSpacePressed(true);
     }
 
-    //NOTE: handler for switching between file system and editor
+    // NOTE: handler for switching between file system and editor
     if (isSpacePressed && e.key === "e" && mode === "normal") {
       e.preventDefault();
       setFocusedCmp((prev) =>
@@ -262,6 +270,13 @@ const NeovimSimulator: React.FC = () => {
       e.preventDefault();
 
       setIsOpenTheme(true);
+      setMode("command");
+    }
+
+    if (isSpacePressed && e.key === "h" && mode === "normal") {
+      e.preventDefault();
+
+      setIsOpenHelp(true);
       setMode("command");
     }
 
@@ -545,7 +560,7 @@ const NeovimSimulator: React.FC = () => {
       {/* Editor */}
       <div
         style={{
-          width: "100vw",
+          width: "80vw",
           height: "100vh",
           backgroundColor: "#1E1E1E",
           color: "#D4D4D4",
@@ -619,15 +634,25 @@ const NeovimSimulator: React.FC = () => {
             </Highlight>
           </pre>
         </div>
-        <span
+        <div
           style={{
             padding: "20px 20px",
             backgroundColor: "#21252b",
             color: "#98c379",
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
-          Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
-        </span>
+          <span style={{}}>
+            Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
+          </span>
+          <span>abizarah ❤️ </span>
+          <span>
+            {" "}
+            ⚙️ Help -{" "}
+            <Kbd.Shortcut keys={["Space", "h"]} variant="default" size="sm" />
+          </span>
+        </div>
       </div>
       <Theme
         isOpen={isOpenTheme}
@@ -636,6 +661,7 @@ const NeovimSimulator: React.FC = () => {
         onClose={handleCloseThemeDialog}
         currentTheme={currentTheme}
       />
+      <Help isOpen={isOpenHelp} setIsOpen={setIsOpenHelp} />
     </div>
   );
 };

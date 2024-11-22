@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Cursor, FileSystemItem, Folder, Mode, File } from "@/types";
+import { Cursor, FileSystemItem, Folder, Mode, File, TypeMode } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
 import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
 import Theme from "./theme";
+import Help from "./help";
+import Kbd from "../ui/kbd";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
-const theme = localStorage.getItem("theme") || "vsDark";
+const theme = localStorage.getItem("theme") || "shadesOfPurple";
 
 const NeovimSimulator: React.FC = () => {
   /**
@@ -25,20 +27,37 @@ const NeovimSimulator: React.FC = () => {
               name: "index.ts",
               depth: 45,
               content: [
-                "// This is a single-line comment",
-                "/* This is a",
-                "   multi-line comment */",
+                "/*",
+                " * ",
+                " * ███╗   ██╗  ███████╗  ██████╗   ██╗   ██╗  ███████╗  ██████╗   ███████╗  ███████╗",
+                " * ████╗  ██║  ██╔════╝  ██╔══██╗  ██║   ██║  ██╔════╝  ██╔══██╗  ██╔════╝  ██╔════╝",
+                " * ██╔██╗ ██║  █████╗    ██║  ██║  ██║   ██║  █████╗    ██████╔╝  ███████╗  █████╗  ",
+                " * ██║╚██╗██║  ██╔══╝    ██║  ██║  ╚██╗ ██╔╝  ██╔══╝    ██╔══██╗  ╚════██║  ██╔══╝  ",
+                " * ██║ ╚████║  ███████╗  ██████╔╝   ╚████╔╝   ███████╗  ██║  ██║  ███████║  ███████╗",
+                " * ╚═╝  ╚═══╝  ╚══════╝  ╚═════╝     ╚═══╝    ╚══════╝  ╚═╝  ╚═╝  ╚══════╝  ╚══════╝",
+                " * ",
+                " * made with ❤️ by abizarah                                         v0.1.1-waldstein ",
+                " * ",
+                "*/",
+                "",
+                "",
                 'const greeting: string = "Hello, World!";',
+                "",
                 "let count: number = 42;",
+                "",
                 "function printGreeting(name: string): void {",
                 "  console.log(`${greeting} My name is ${name}.`);",
                 "}",
+                "",
                 "class Person {",
                 "  constructor(private name: string) {}",
+                "",
                 "  greet() {",
                 "    printGreeting(this.name);",
                 "  }",
                 "}",
+                "",
+                "",
                 'const john = new Person("John");',
                 "john.greet();",
               ],
@@ -46,19 +65,26 @@ const NeovimSimulator: React.FC = () => {
             {
               name: "utils.ts",
               depth: 45,
-              content: [""],
+              content: ["export const initializeIndexedDB = (): void => {};"],
             },
             {
               name: "type.ts",
               depth: 45,
-              content: [""],
+              content: [
+                "export type TypeMode = 'normal' | 'insert' | 'visual' | 'command';",
+              ],
             },
           ],
         },
         {
           name: "README.md",
           depth: 20,
-          content: ["# My Project", "", "This is a sample project."],
+          content: ["", "# My Project", "", "This is a sample project. 比周  "],
+        },
+        {
+          name: "AUTHORS.md",
+          depth: 20,
+          content: ["# Authors", "", "- This is a sample project. 比周  "],
         },
       ],
     },
@@ -68,6 +94,7 @@ const NeovimSimulator: React.FC = () => {
   const [mode, setMode] = useState<Mode>("normal");
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
   const [isOpenTheme, setIsOpenTheme] = useState(false);
+  const [isOpenHelp, setIsOpenHelp] = useState(false);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -75,8 +102,8 @@ const NeovimSimulator: React.FC = () => {
   const [isSpacePressed, setIsSpacePressed] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-
   const [currentTheme, setCurrentTheme] = useState(theme);
+  const [keyPressed, setKeyPressed] = useState<string[]>([]);
 
   /**
    * Refs
@@ -85,6 +112,8 @@ const NeovimSimulator: React.FC = () => {
   const fileSystemRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const keyPressedRef = useRef<string[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Callbacks
@@ -102,6 +131,54 @@ const NeovimSimulator: React.FC = () => {
     }
   }, []);
 
+  const deleteLine = useCallback(() => {
+    // newLine a line that the character is has been deleted
+    const newLines = [...lines];
+
+    //lines otherwise still have the deleted line and content
+
+    // TODO: we have to store the cursor.line position
+    // and then we can filter out the deleted line and content and we can set the value to undoLine
+    newLines.splice(cursor.line, 1);
+    setLines(newLines);
+    setCursor({ line: cursor.line, ch: 0 });
+  }, [cursor, lines]);
+
+  const undoLine = useCallback(() => {
+    if (cursor.line > 0) {
+      const newLines = [...lines];
+      newLines.splice(cursor.line, 1);
+      newLines.splice(cursor.line, 0, lines[cursor.line]);
+      setLines(newLines);
+      setCursor({ line: cursor.line, ch: lines[cursor.line].length });
+    }
+  }, [cursor, lines]);
+
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (mode === TypeMode.NORMAL) {
+        keyPressedRef.current.push(event.key);
+
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          if (
+            keyPressedRef.current.includes("d") &&
+            keyPressedRef.current.length === 2
+          ) {
+            deleteLine();
+          } else if (keyPressedRef.current.includes("u")) {
+            undoLine();
+          }
+          keyPressedRef.current = [];
+        }, 200);
+      }
+    },
+    [mode, deleteLine, undoLine],
+  );
+
   /**
    * Effects
    */
@@ -116,7 +193,10 @@ const NeovimSimulator: React.FC = () => {
 
   useEffect(() => {
     initializeIndexedDB();
-  }, []);
+
+    const defaultFile = fileSystem?.[0]?.children?.[0]?.children[0] || [];
+    openFile(defaultFile);
+  }, [fileSystem]);
 
   useEffect(() => {
     if (scrollTimeoutRef.current) {
@@ -133,6 +213,16 @@ const NeovimSimulator: React.FC = () => {
       }
     };
   }, [cursor, scrollToCursor]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [handleKeyPress]);
 
   const handleThemeChange = (newTheme: string) => {
     setCurrentTheme(newTheme);
@@ -188,7 +278,7 @@ const NeovimSimulator: React.FC = () => {
       setIsSpacePressed(true);
     }
 
-    //NOTE: handler for switching between file system and editor
+    // NOTE: handler for switching between file system and editor
     if (isSpacePressed && e.key === "e" && mode === "normal") {
       e.preventDefault();
       setFocusedCmp((prev) =>
@@ -202,6 +292,13 @@ const NeovimSimulator: React.FC = () => {
       e.preventDefault();
 
       setIsOpenTheme(true);
+      setMode("command");
+    }
+
+    if (isSpacePressed && e.key === "h" && mode === "normal") {
+      e.preventDefault();
+
+      setIsOpenHelp(true);
       setMode("command");
     }
 
@@ -241,6 +338,12 @@ const NeovimSimulator: React.FC = () => {
   const handleEditorNavigation = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mode === "normal") {
       switch (e.key) {
+        case "d":
+          setKeyPressed((prevKeyPressed) => {
+            const newKeyPressed = [...prevKeyPressed, "d"];
+            return newKeyPressed;
+          });
+          break;
         case "i":
           setMode("insert");
           break;
@@ -266,6 +369,9 @@ const NeovimSimulator: React.FC = () => {
         case "o":
           setMode("insert");
           insertNewLine();
+          break;
+        case "u":
+          deleteChar();
           break;
         case "w":
           e.preventDefault();
@@ -330,7 +436,6 @@ const NeovimSimulator: React.FC = () => {
         line.slice(0, cursor.ch) + char + line.slice(cursor.ch);
       return newLines;
     });
-
     setCursor((prevCursor) => ({ ...prevCursor, ch: prevCursor.ch + 1 }));
     updateListSymbol();
   };
@@ -439,10 +544,7 @@ const NeovimSimulator: React.FC = () => {
         {isFolder(item) ? (
           <span style={{ paddingLeft: `${item.depth}px` }}>📁 {item.name}</span>
         ) : (
-          <span style={{ paddingLeft: `${item.depth}px` }}>
-            📄
-            {item.name}
-          </span>
+          <span style={{ paddingLeft: `${item.depth}px` }}>📄 {item.name}</span>
         )}
       </div>
     ));
@@ -450,35 +552,34 @@ const NeovimSimulator: React.FC = () => {
   return (
     <div className="flex flex-row" onKeyDown={handleKeyDown}>
       {/* File system */}
-      {focusedCmp === "fileSystem" && (
-        <div
-          ref={fileSystemRef}
-          tabIndex={0}
-          style={{
-            width: "25vw",
-            height: "100vh",
-            backgroundColor: "#1E1E1E",
-            color: "#858585",
-            fontFamily: "Consolas, monospace",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {renderFileSystem(fileSystem)}
-          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-          <FileStatusDisplay
-            mode={mode}
-            currentFile={currentFile}
-            isUnsaved={isSaving}
-          />
-        </div>
-      )}
+      <div
+        ref={fileSystemRef}
+        tabIndex={0}
+        style={{
+          width: "20vw",
+          height: "100vh",
+          backgroundColor: "#1E1E1E",
+          color: "#858585",
+          fontFamily: "Consolas, monospace",
+          fontSize: "14px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {renderFileSystem(fileSystem)}
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+        <FileStatusDisplay
+          mode={mode}
+          currentFile={currentFile}
+          isUnsaved={isSaving}
+          saveMessage={saveMessage}
+        />
+      </div>
 
       {/* Editor */}
       <div
         style={{
-          width: "100vw",
+          width: "80vw",
           height: "100vh",
           backgroundColor: "#1E1E1E",
           color: "#D4D4D4",
@@ -511,7 +612,7 @@ const NeovimSimulator: React.FC = () => {
               margin: 0,
               overflowY: "auto",
               position: "relative",
-              outline: focusedCmp === "editor" ? "2px solid #528bff" : "none",
+              outline: focusedCmp === "editor" ? "2px solid #ffffff" : "none",
             }}
           >
             <Highlight
@@ -552,15 +653,25 @@ const NeovimSimulator: React.FC = () => {
             </Highlight>
           </pre>
         </div>
-        <span
+        <div
           style={{
             padding: "20px 20px",
             backgroundColor: "#21252b",
             color: "#98c379",
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
-          Cursor {cursor.line + 1}:{cursor.ch + 1}
-        </span>
+          <span style={{}}>
+            Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
+          </span>
+          <span>abizarah ❤️ </span>
+          <span>
+            {" "}
+            ⚙️ Help -{" "}
+            <Kbd.Shortcut keys={["Space", "h"]} variant="default" size="sm" />
+          </span>
+        </div>
       </div>
       <Theme
         isOpen={isOpenTheme}
@@ -569,6 +680,7 @@ const NeovimSimulator: React.FC = () => {
         onClose={handleCloseThemeDialog}
         currentTheme={currentTheme}
       />
+      <Help isOpen={isOpenHelp} setIsOpen={setIsOpenHelp} />
     </div>
   );
 };

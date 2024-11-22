@@ -1,14 +1,20 @@
-<p align="center">
-<img src="./public/image.png" height="90">
-</p>
-
-<h1 align="center">
-   Neoverse
-</h1>
+<div align="center">
+  <table border="0" align="center">
+    <tr>
+      <td align="center"><img src="https://raw.githubusercontent.com/Abizrh/neoverse/main/public/image.png" height="96"/></td>
+      <td align="center"><h1>neoverse</h1></td>
+    </tr>
+  </table>
+</div>
+<hr/>
 
 <p align="center">
 Neoverse is a web based application that simulates the experience of using Neovim, a popular terminal-based text editor. Built with React and TypeScript, this project provides an interactive interface for learning and practicing Neovim without the need to install the actual application.
 </p>
+
+
+> [!CAUTION]
+> Under active development! ⚒️
 
 <p align="center">
 <img src="./public/screenshoot.png">

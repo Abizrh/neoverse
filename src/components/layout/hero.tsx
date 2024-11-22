@@ -26,7 +26,7 @@ const Home: React.FC = () => {
       <section className="py-16 md:py-32 px-6 lg:px-0 max-w-4xl mx-auto">
         <div className="space-y-5 max-w-2xl">
           <div className="bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-semibold inline-block">
-            v.1.0.0 - Early stages
+            v0.1.1 • Waldstein
           </div>
           <h1 className="font-display text-2xl md:text-4xl font-bold">
             Learn and practice neovim, anytime, anywhere

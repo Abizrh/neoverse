@@ -6,6 +6,7 @@ import FileStatusDisplay from "./status";
 import Theme from "./theme";
 import Help from "./help";
 import Kbd from "../ui/kbd";
+//
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 const theme = localStorage.getItem("theme") || "shadesOfPurple";
@@ -84,7 +85,7 @@ const NeovimSimulator: React.FC = () => {
         {
           name: "AUTHORS.md",
           depth: 20,
-          content: ["# Authors", "", "- This is a sample project. 比周  "],
+          content: ["# Authors", "", "This is a sample project. 比周  "],
         },
       ],
     },

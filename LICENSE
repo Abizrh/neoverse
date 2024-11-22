@@ -1,0 +1,38 @@
+
+
+            <Highlight
+              theme={themes[currentTheme as keyof typeof themes]}
+              code={lines.join("\n")}
+              language={getLanguage(currentFile?.name || "")}
+            >
+              {({ tokens, getLineProps, getTokenProps }) => (
+                <>
+                  {tokens.map((line, lineIndex) => (
+                    <div
+                      key={lineIndex}
+                      {...getLineProps({ line })}
+                      style={{ position: "relative", minHeight: "1.2em" }}
+                    >
+                      {line.map((token, tokenIndex) => (
+                        <span key={tokenIndex} {...getTokenProps({ token })} />
+                      ))}
+                      {lineIndex === cursor.line && focusedCmp === "editor" && (
+                        <span
+                          ref={cursorRef}
+                          style={{
+                            position: "absolute",
+                            left: `${cursor.ch * 8.4}px`,
+                            top: 0,
+                            height: "1.2em",
+                            borderLeft:
+                              mode === "insert"
+                                ? "2px solid #007ACC"
+                                : "6px solid #007ACC",
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </Highlight>

@@ -5,13 +5,10 @@ import { getLanguage, initializeIndexedDB } from "@/lib/utils";
 import FileStatusDisplay from "./status";
 import Theme from "./theme";
 import Help from "./help";
-import { HelpCircleIcon } from "lucide-react";
 import Kbd from "../ui/kbd";
-// import Help from "./help";
-//
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
-const theme = localStorage.getItem("theme") || "vsDark";
+const theme = localStorage.getItem("theme") || "shadesOfPurple";
 
 const NeovimSimulator: React.FC = () => {
   /**
@@ -30,20 +27,37 @@ const NeovimSimulator: React.FC = () => {
               name: "index.ts",
               depth: 45,
               content: [
-                "// This is a single-line comment",
-                "/* This is a",
-                "   multi-line comment */",
+                "/*",
+                " * ",
+                " * ███╗   ██╗  ███████╗  ██████╗   ██╗   ██╗  ███████╗  ██████╗   ███████╗  ███████╗",
+                " * ████╗  ██║  ██╔════╝  ██╔══██╗  ██║   ██║  ██╔════╝  ██╔══██╗  ██╔════╝  ██╔════╝",
+                " * ██╔██╗ ██║  █████╗    ██║  ██║  ██║   ██║  █████╗    ██████╔╝  ███████╗  █████╗  ",
+                " * ██║╚██╗██║  ██╔══╝    ██║  ██║  ╚██╗ ██╔╝  ██╔══╝    ██╔══██╗  ╚════██║  ██╔══╝  ",
+                " * ██║ ╚████║  ███████╗  ██████╔╝   ╚████╔╝   ███████╗  ██║  ██║  ███████║  ███████╗",
+                " * ╚═╝  ╚═══╝  ╚══════╝  ╚═════╝     ╚═══╝    ╚══════╝  ╚═╝  ╚═╝  ╚══════╝  ╚══════╝",
+                " * ",
+                " * made with ❤️ by abizarah                                         v0.1.1-waldstein ",
+                " * ",
+                "*/",
+                "",
+                "",
                 'const greeting: string = "Hello, World!";',
+                "",
                 "let count: number = 42;",
+                "",
                 "function printGreeting(name: string): void {",
                 "  console.log(`${greeting} My name is ${name}.`);",
                 "}",
+                "",
                 "class Person {",
                 "  constructor(private name: string) {}",
+                "",
                 "  greet() {",
                 "    printGreeting(this.name);",
                 "  }",
                 "}",
+                "",
+                "",
                 'const john = new Person("John");',
                 "john.greet();",
               ],
@@ -65,7 +79,12 @@ const NeovimSimulator: React.FC = () => {
         {
           name: "README.md",
           depth: 20,
-          content: ["# My Project", "", "This is a sample project."],
+          content: ["", "# My Project", "", "This is a sample project. 比周  "],
+        },
+        {
+          name: "AUTHORS.md",
+          depth: 20,
+          content: ["# Authors", "", "- This is a sample project. 比周  "],
         },
       ],
     },
@@ -75,7 +94,7 @@ const NeovimSimulator: React.FC = () => {
   const [mode, setMode] = useState<Mode>("normal");
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
   const [isOpenTheme, setIsOpenTheme] = useState(false);
-  const [isOpenHelp, setIsOpenHelp] = useState(true);
+  const [isOpenHelp, setIsOpenHelp] = useState(false);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -174,7 +193,10 @@ const NeovimSimulator: React.FC = () => {
 
   useEffect(() => {
     initializeIndexedDB();
-  }, []);
+
+    const defaultFile = fileSystem?.[0]?.children?.[0]?.children[0] || [];
+    openFile(defaultFile);
+  }, [fileSystem]);
 
   useEffect(() => {
     if (scrollTimeoutRef.current) {
@@ -522,10 +544,7 @@ const NeovimSimulator: React.FC = () => {
         {isFolder(item) ? (
           <span style={{ paddingLeft: `${item.depth}px` }}>📁 {item.name}</span>
         ) : (
-          <span style={{ paddingLeft: `${item.depth}px` }}>
-            📄
-            {item.name}
-          </span>
+          <span style={{ paddingLeft: `${item.depth}px` }}>📄 {item.name}</span>
         )}
       </div>
     ));
@@ -593,7 +612,7 @@ const NeovimSimulator: React.FC = () => {
               margin: 0,
               overflowY: "auto",
               position: "relative",
-              outline: focusedCmp === "editor" ? "2px solid #528bff" : "none",
+              outline: focusedCmp === "editor" ? "2px solid #ffffff" : "none",
             }}
           >
             <Highlight

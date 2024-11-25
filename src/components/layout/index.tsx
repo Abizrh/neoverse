@@ -4,7 +4,6 @@ import Hero from "./hero";
 import Explainer from "./explainer";
 import OpenSource from "./opensource";
 import Footer from "./footer";
-import { BentoGridExample } from "./bento";
 
 function layout() {
   return (

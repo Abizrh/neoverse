@@ -87,9 +87,6 @@ const Theme: React.FC<ThemeProps> = ({
         break;
       case "Enter":
         event.preventDefault();
-        // onThemeChange(themes[focusedIndex].value);
-        // setFocusedIndex(0);
-        // onClose();
         break;
     }
   };

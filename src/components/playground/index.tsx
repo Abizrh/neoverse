@@ -6,10 +6,12 @@ import FileStatusDisplay from "./status";
 import Theme from "./theme";
 import Help from "./help";
 import Kbd from "../ui/kbd";
+import Terminal from "./terminal";
 
 const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 const theme = localStorage.getItem("theme") || "shadesOfPurple";
 
+// TODO: need to figure out how to separate the logic of these states and effects
 const NeovimSimulator: React.FC = () => {
   /**
    * States
@@ -95,6 +97,7 @@ const NeovimSimulator: React.FC = () => {
   const [cursor, setCursor] = useState<Cursor>({ line: 0, ch: 0 });
   const [isOpenTheme, setIsOpenTheme] = useState(false);
   const [isOpenHelp, setIsOpenHelp] = useState(false);
+  const [isOpenCmd, setIsOpenCmd] = useState(false);
   const [focusedCmp, setFocusedCmp] = useState<"fileSystem" | "editor">(
     "editor",
   );
@@ -224,6 +227,12 @@ const NeovimSimulator: React.FC = () => {
     };
   }, [handleKeyPress]);
 
+  useEffect(() => {
+    if (!isOpenCmd || !isOpenHelp) {
+      editorRef.current?.focus();
+    }
+  }, [isOpenCmd, isOpenHelp]);
+
   const handleThemeChange = (newTheme: string) => {
     setCurrentTheme(newTheme);
     localStorage.setItem("theme", newTheme);
@@ -276,6 +285,12 @@ const NeovimSimulator: React.FC = () => {
     if (e.key === " ") {
       e.preventDefault();
       setIsSpacePressed(true);
+    }
+
+    // open command line
+    if (e.key === ":") {
+      e.preventDefault();
+      setIsOpenCmd(true);
     }
 
     // NOTE: handler for switching between file system and editor
@@ -550,138 +565,145 @@ const NeovimSimulator: React.FC = () => {
     ));
   };
   return (
-    <div className="flex flex-row" onKeyDown={handleKeyDown}>
-      {/* File system */}
-      <div
-        ref={fileSystemRef}
-        tabIndex={0}
-        style={{
-          width: "20vw",
-          height: "100vh",
-          backgroundColor: "#1E1E1E",
-          color: "#858585",
-          fontFamily: "Consolas, monospace",
-          fontSize: "14px",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {renderFileSystem(fileSystem)}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
-        <FileStatusDisplay
-          mode={mode}
-          currentFile={currentFile}
-          isUnsaved={isSaving}
-          saveMessage={saveMessage}
-        />
-      </div>
-
-      {/* Editor */}
-      <div
-        style={{
-          width: "80vw",
-          height: "100vh",
-          backgroundColor: "#1E1E1E",
-          color: "#D4D4D4",
-          fontFamily: "Consolas, monospace",
-          fontSize: "14px",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          <div
-            style={{
-              padding: "10px",
-              backgroundColor: "#252526",
-              color: "#858585",
-              textAlign: "right",
-              userSelect: "none",
-            }}
-          >
-            {lines.map((_, i) => (
-              <div key={i}>{i + 1}</div>
-            ))}
-          </div>
-          <pre
-            ref={editorRef}
-            tabIndex={0}
-            style={{
-              flex: 1,
-              padding: "10px",
-              margin: 0,
-              overflowY: "auto",
-              position: "relative",
-              outline: focusedCmp === "editor" ? "2px solid #ffffff" : "none",
-            }}
-          >
-            <Highlight
-              theme={themes[currentTheme as keyof typeof themes]}
-              code={lines.join("\n")}
-              language={getLanguage(currentFile?.name || "")}
-            >
-              {({ tokens, getLineProps, getTokenProps }) => (
-                <>
-                  {tokens.map((line, lineIndex) => (
-                    <div
-                      key={lineIndex}
-                      {...getLineProps({ line })}
-                      style={{ position: "relative", minHeight: "1.2em" }}
-                    >
-                      {line.map((token, tokenIndex) => (
-                        <span key={tokenIndex} {...getTokenProps({ token })} />
-                      ))}
-                      {lineIndex === cursor.line && focusedCmp === "editor" && (
-                        <span
-                          ref={cursorRef}
-                          style={{
-                            position: "absolute",
-                            left: `${cursor.ch * 8.4}px`,
-                            top: 0,
-                            height: "1.2em",
-                            borderLeft:
-                              mode === "insert"
-                                ? "2px solid #007ACC"
-                                : "6px solid #007ACC",
-                          }}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </Highlight>
-          </pre>
-        </div>
+    <>
+      <div className="flex flex-row" onKeyDown={handleKeyDown}>
+        {/* File system */}
         <div
+          ref={fileSystemRef}
+          tabIndex={0}
           style={{
-            padding: "20px 20px",
-            backgroundColor: "#21252b",
-            color: "#98c379",
+            width: "20vw",
+            height: "100vh",
+            backgroundColor: "#1E1E1E",
+            color: "#858585",
+            fontFamily: "Consolas, monospace",
+            fontSize: "14px",
             display: "flex",
-            justifyContent: "space-between",
+            flexDirection: "column",
           }}
         >
-          <span style={{}}>
-            Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
-          </span>
-          <span>abizarah ❤️ </span>
-          <span>
-            {" "}
-            ⚙️ Help -{" "}
-            <Kbd.Shortcut keys={["Space", "h"]} variant="default" size="sm" />
-          </span>
+          {renderFileSystem(fileSystem)}
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}></div>
+          <FileStatusDisplay
+            mode={mode}
+            currentFile={currentFile}
+            isUnsaved={isSaving}
+            saveMessage={saveMessage}
+          />
         </div>
+
+        {/* Editor */}
+        <div
+          style={{
+            width: "80vw",
+            height: "100vh",
+            backgroundColor: "#1E1E1E",
+            color: "#D4D4D4",
+            fontFamily: "Consolas, monospace",
+            fontSize: "14px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+            <div
+              style={{
+                padding: "10px",
+                backgroundColor: "#252526",
+                color: "#858585",
+                textAlign: "right",
+                userSelect: "none",
+              }}
+            >
+              {lines.map((_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
+            <pre
+              ref={editorRef}
+              tabIndex={0}
+              style={{
+                flex: 1,
+                padding: "10px",
+                margin: 0,
+                overflowY: "auto",
+                position: "relative",
+                outline: focusedCmp === "editor" ? "2px solid #ffffff" : "none",
+              }}
+            >
+              <Highlight
+                theme={themes[currentTheme as keyof typeof themes]}
+                code={lines.join("\n")}
+                language={getLanguage(currentFile?.name || "")}
+              >
+                {({ tokens, getLineProps, getTokenProps }) => (
+                  <>
+                    {tokens.map((line, lineIndex) => (
+                      <div
+                        key={lineIndex}
+                        {...getLineProps({ line })}
+                        style={{ position: "relative", minHeight: "1.2em" }}
+                      >
+                        {line.map((token, tokenIndex) => (
+                          <span
+                            key={tokenIndex}
+                            {...getTokenProps({ token })}
+                          />
+                        ))}
+                        {lineIndex === cursor.line &&
+                          focusedCmp === "editor" && (
+                            <span
+                              ref={cursorRef}
+                              style={{
+                                position: "absolute",
+                                left: `${cursor.ch * 8.4}px`,
+                                top: 0,
+                                height: "1.2em",
+                                borderLeft:
+                                  mode === "insert"
+                                    ? "2px solid #007ACC"
+                                    : "6px solid #007ACC",
+                              }}
+                            />
+                          )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </Highlight>
+            </pre>
+          </div>
+          <div
+            style={{
+              padding: "20px 20px",
+              backgroundColor: "#21252b",
+              color: "#98c379",
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span style={{}}>
+              Cursor {cursor.line + 1}:{cursor.ch + 1} * {saveMessage}
+            </span>
+            <span>abizarah ❤️ </span>
+            <span>
+              {" "}
+              ⚙️ Help -{" "}
+              <Kbd.Shortcut keys={["Space", "h"]} variant="default" size="sm" />
+            </span>
+          </div>
+        </div>
+        <Theme
+          isOpen={isOpenTheme}
+          setIsOpen={setIsOpenTheme}
+          onThemeChange={handleThemeChange}
+          onClose={handleCloseThemeDialog}
+          currentTheme={currentTheme}
+        />
       </div>
-      <Theme
-        isOpen={isOpenTheme}
-        setIsOpen={setIsOpenTheme}
-        onThemeChange={handleThemeChange}
-        onClose={handleCloseThemeDialog}
-        currentTheme={currentTheme}
-      />
+      <Terminal isOpen={isOpenCmd} setIsOpen={setIsOpenCmd} />
       <Help isOpen={isOpenHelp} setIsOpen={setIsOpenHelp} />
-    </div>
+    </>
   );
 };
 

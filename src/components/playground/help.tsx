@@ -12,8 +12,7 @@ const shortcuts = [
   { key: "w", description: "Save file" },
   { key: "Space e", description: "Open file" },
   { key: "Space t", description: "Change theme" },
-  { key: ":q", description: "Quit editor" },
-  { key: ":wq", description: "Save and quit" },
+  { key: "Shift :", description: "Open command line" },
 ];
 
 interface HelpProps {

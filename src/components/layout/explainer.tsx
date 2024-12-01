@@ -23,7 +23,7 @@ const Explainer: React.FC = () => {
         <Card
           title="What is Neovim?"
           description="Get a quick overview of Neovim and its features."
-          linkTo="/"
+          linkTo="https://dev.to/insideee_dev/neovim-a-powerful-and-customizable-text-editor-an-introduction-for-beginners-17gb"
           linkText="Learn more →"
         />
         <Card

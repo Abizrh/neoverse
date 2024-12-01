@@ -45,7 +45,7 @@ export const BentoGridItem: React.FC<BentoGridItemProps> = ({
 
 interface BentoGridCardProps {
   name: string;
-  icon?: React.ComponentType;
+  icon?: React.FC<React.SVGProps<SVGSVGElement>>;
   description: string;
   href: string;
   cta: string;

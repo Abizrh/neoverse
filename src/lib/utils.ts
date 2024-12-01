@@ -1,3 +1,4 @@
+import { FileSystemItem, Folder } from "@/types";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -54,3 +55,17 @@ export const initializeIndexedDB = () => {
     db.createObjectStore("files", { keyPath: "name" });
   };
 };
+
+export const flattenFileSystem = (
+  items: FileSystemItem[],
+): FileSystemItem[] => {
+  return items.reduce((acc: FileSystemItem[], item) => {
+    if (isFolder(item)) {
+      return [...acc, item, ...flattenFileSystem(item.children)];
+    }
+    return [...acc, item];
+  }, []);
+};
+
+export const isFolder = (item: FileSystemItem): item is Folder =>
+  "children" in item;

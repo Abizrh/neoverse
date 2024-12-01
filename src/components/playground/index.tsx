@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Cursor, FileSystemItem, Folder, Mode, File, TypeMode } from "@/types";
 import { Highlight, themes } from "prism-react-renderer";
-import { getLanguage, initializeIndexedDB } from "@/lib/utils";
+import {
+  flattenFileSystem,
+  getLanguage,
+  initializeIndexedDB,
+  isFolder,
+} from "@/lib/utils";
 import FileStatusDisplay from "./status";
 import Theme from "./theme";
 import Help from "./help";
 import Kbd from "../ui/kbd";
 import Terminal from "./terminal";
 
-const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
+// const isFolder = (item: FileSystemItem): item is Folder => "children" in item;
 const theme = localStorage.getItem("theme") || "shadesOfPurple";
 
 // TODO: need to figure out how to separate the logic of these states and effects
@@ -216,7 +221,9 @@ const NeovimSimulator: React.FC = () => {
   useEffect(() => {
     initializeIndexedDB();
 
-    const defaultFile = fileSystem?.[0]?.children?.[0]?.children[0] || [];
+    const flattened = flattenFileSystem(fileSystem) || [];
+    const defaultFile = flattened[2] as File;
+
     openFile(defaultFile);
   }, [fileSystem]);
 
@@ -554,14 +561,14 @@ const NeovimSimulator: React.FC = () => {
     };
   };
 
-  const flattenFileSystem = (items: FileSystemItem[]): FileSystemItem[] => {
-    return items.reduce((acc: FileSystemItem[], item) => {
-      if (isFolder(item)) {
-        return [...acc, item, ...flattenFileSystem(item.children)];
-      }
-      return [...acc, item];
-    }, []);
-  };
+  // const flattenFileSystem = (items: FileSystemItem[]): FileSystemItem[] => {
+  //   return items.reduce((acc: FileSystemItem[], item) => {
+  //     if (isFolder(item)) {
+  //       return [...acc, item, ...flattenFileSystem(item.children)];
+  //     }
+  //     return [...acc, item];
+  //   }, []);
+  // };
 
   const renderFileSystem = (items: FileSystemItem[]): JSX.Element[] => {
     const flattenedItems = flattenFileSystem(items);
